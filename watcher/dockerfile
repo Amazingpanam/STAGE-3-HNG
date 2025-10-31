@@ -1,0 +1,19 @@
+# Use lightweight Python base image
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency list and install requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy watcher script
+COPY watcher.py .
+
+# Environment variables for runtime config (optional defaults)
+ENV PYTHONUNBUFFERED=1
+ENV LOG_PATH=/var/log/nginx/access.log
+
+# Command to run watcher
+CMD ["python", "watcher.py"]
