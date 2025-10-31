@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/nginx.conf:ro
+      - ./logs:/var/log/nginx
+    depends_on:
+      - app_blue
+      - app_green
+    restart: always
+
+  app_blue:
+    image: ${BLUE_IMAGE}
+    container_name: app_blue
+    environment:
+      - RELEASE_ID=${RELEASE_ID_BLUE}
+      - PORT=${PORT}
+    ports:
+      - "8081:${PORT}"
+    restart: always
+
+  app_green:
+    image: ${GREEN_IMAGE}
+    container_name: app_green
+    environment:
+      - RELEASE_ID=${RELEASE_ID_GREEN}
+      - PORT=${PORT}
+    ports:
+      - "8082:${PORT}"
+    restart: always
+
+  alert_watcher:
+    build: ./watcher
+    container_name: alert_watcher
+    environment:
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - ACTIVE_POOL=${ACTIVE_POOL}
+      - ERROR_RATE_THRESHOLD=${ERROR_RATE_THRESHOLD}
+      - WINDOW_SIZE=${WINDOW_SIZE}
+      - ALERT_COOLDOWN_SEC=${ALERT_COOLDOWN_SEC}
+    volumes:
+      - ./logs:/var/log/nginx:ro
+    restart: unless-stopped
+
+volumes:
+  logs:
